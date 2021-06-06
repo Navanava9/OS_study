@@ -8,7 +8,7 @@ void cpu()
 
     // cpu 很忙
     for (int i = 0; i < 2000; i++)
-        for (int k = 0; k < 2000; k++)
+        for (int k = 0; k < 20000; k++)
             ;
 
     // 计时结束
@@ -44,7 +44,7 @@ void io()
     DWORD dwBytesToWrite = (DWORD)strlen(DataBuffer);
     DWORD dwBytesWritten = 0;
 
-    for (int i = 0; i < 1000; i++)
+    for (int i = 0; i < 10000; i++)
     {
         BOOL bErrorFlag = WriteFile(
             hFile,           // open file handle
