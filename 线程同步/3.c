@@ -1,45 +1,30 @@
 #include <stdio.h>
-#include <process.h>
 #include <windows.h>
-long g_nNum;
-unsigned int __stdcall Fun(void *pPM);
-const int THREAD_NUM = 10;
-//事件与关键段
-HANDLE  g_hThreadEvent;
-CRITICAL_SECTION g_csThreadCode;
+const char MUTEX_NAME[] = "Mutex_MoreWindows";
 int main()
 {
-	//初始化事件和关键段 自动置位,初始无触发的匿名事件
-	g_hThreadEvent = CreateEvent(NULL, FALSE, FALSE, NULL); 
-	InitializeCriticalSection(&g_csThreadCode);
- 
-	HANDLE  handle[THREAD_NUM];	
-	g_nNum = 0;
-	int i = 0;
-	while (i < THREAD_NUM) 
+	HANDLE hMutex = OpenMutex(MUTEX_ALL_ACCESS, TRUE, MUTEX_NAME); //打开互斥量
+	if (hMutex == NULL)
 	{
-		handle[i] = (HANDLE)_beginthreadex(NULL, 0, Fun, &i, 0, NULL);
-		WaitForSingleObject(g_hThreadEvent, INFINITE); //等待事件被触发
-		i++;
+		printf("打开互斥量失败\n");
+		return 0;
 	}
-	WaitForMultipleObjects(THREAD_NUM, handle, TRUE, INFINITE);
+	printf("等待中....\n");
+	DWORD dwResult = WaitForSingleObject(hMutex, 20 * 1000); //等待互斥量被触发
+	switch (dwResult)
+	{
+	case WAIT_ABANDONED:
+		printf("拥有互斥量的进程意外终止\n");
+		break;
  
-	//销毁事件和关键段
-	CloseHandle(g_hThreadEvent);
-	DeleteCriticalSection(&g_csThreadCode);
-	return 0;
-}
-unsigned int __stdcall Fun(void *pPM)
-{
-	int nThreadNum = *(int *)pPM; 
-	SetEvent(g_hThreadEvent); //触发事件
-	
-	Sleep(50);//some work should to do
-	
-	EnterCriticalSection(&g_csThreadCode);
-	g_nNum++;
-	Sleep(0);//some work should to do
-	printf("线程编号为%d  全局资源值为%d\n", nThreadNum, g_nNum); 
-	LeaveCriticalSection(&g_csThreadCode);
+	case WAIT_OBJECT_0:
+		printf("已经收到信号\n");
+		break;
+ 
+	case WAIT_TIMEOUT:
+		printf("信号未在规定的时间内送到\n");
+		break;
+	}
+	CloseHandle(hMutex);
 	return 0;
 }

@@ -5,7 +5,7 @@
 #define THREAD_NUM 10
 
 long g_nNum;
-unsigned int __stdcall Fun(void *pPM);
+DWORD WINAPI Fun(void *pPM);
 
 CRITICAL_SECTION g_csThreadParameter, g_csThreadCode; //关键段变量声明
 
@@ -21,7 +21,7 @@ int main()
     while (i < THREAD_NUM)
     {
         EnterCriticalSection(&g_csThreadParameter); //进入子线程序号关键区域
-        handle[i] = (HANDLE)_beginthreadex(NULL, 0, Fun, &i, 0, NULL);
+        handle[i] = CreateThread(NULL, 0, Fun, &i, 0, NULL);
         ++i;
     }
     WaitForMultipleObjects(THREAD_NUM, handle, TRUE, INFINITE);
@@ -30,7 +30,8 @@ int main()
     DeleteCriticalSection(&g_csThreadParameter);
     return 0;
 }
-unsigned int __stdcall Fun(void *pPM)
+
+DWORD WINAPI Fun(void *pPM)
 {
     int nThreadNum = *(int *)pPM;
     LeaveCriticalSection(&g_csThreadParameter); //离开子线程序号关键区域
